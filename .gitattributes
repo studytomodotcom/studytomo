@@ -1,3 +1,42 @@
+# --------------------------------------------------
+# 🌍 Git Attributes — cross-platform consistency
+# --------------------------------------------------
+
+# Auto-normalize line endings (Windows ↔ macOS/Linux)
+* text=auto eol=lf
+
+# Prevent accidental binary corruption
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.mp4 binary
+*.wav binary
+*.mp3 binary
+*.zip binary
+*.rar binary
+*.7z binary
+*.exe binary
+
+# TypeScript / JavaScript
+*.js  text eol=lf
+*.ts  text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+
+# Config files
+*.env text eol=lf
+*.md  text eol=lf
+*.sh  text eol=lf
+*.ps1 text eol=lf
+*.bat text eol=lf
+
+# Ignore case sensitivity (useful on Windows)
+* -diff
+
+# Enable Git LFS for large binary files
 *.wav filter=lfs diff=lfs merge=lfs -text
 *.mp3 filter=lfs diff=lfs merge=lfs -text
 *.mp4 filter=lfs diff=lfs merge=lfs -text
