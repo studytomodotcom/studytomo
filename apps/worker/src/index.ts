@@ -61,11 +61,14 @@ app.post("/transcribe", async (req, res) => {
 
     // Step 2 — Convert to WAV
     console.log("🎧 Converting to WAV...");
-    await runCommand(`"${FFMPEG_PATH}" -y -i "${audioPath}" -vn -acodec pcm_s16le -ar 16000 -ac 1 "${wavPath}"`);
+    await runCommand(
+      `"${FFMPEG_PATH}" -y -i "${audioPath}" -vn -acodec pcm_s16le -ar 16000 -ac 1 "${wavPath}"`
+    );
 
     // Step 3 — Verify file
     const wavStats = fs.statSync(wavPath);
-    if (wavStats.size < 50000) throw new Error("Converted WAV too small — possible conversion failure");
+    if (wavStats.size < 50000)
+      throw new Error("Converted WAV too small — possible conversion failure");
 
     // Step 4 — Send to OpenAI Whisper
     console.log("🧠 Sending to OpenAI Whisper...");
