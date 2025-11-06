@@ -1,13 +1,31 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "CommonJS",
+    /* 🌐 Modern environment support */
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+
+    /* ⚙️ Compatibility & type safety */
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowJs": false,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true,
+
+    /* 🧭 Path aliases for monorepo */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/frontend/src/*"]
+    },
+
+    /* 🧩 Type roots */
     "types": ["node"]
-  }
+  },
+
+  "include": ["apps/**/*", "packages/**/*", "types/**/*"],
+  "exclude": ["node_modules", ".next", "dist"]
 }
