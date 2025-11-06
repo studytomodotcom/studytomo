@@ -1,11 +1,28 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    /* ✅ Base setup for Next.js app */
+    "typeRoots": ["src/types", "node_modules/@types"],
     "jsx": "preserve",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    /* ✅ Path alias (so @/lib/... and @/components/... work) */
     "baseUrl": "src",
     "paths": {
       "@/*": ["*"]
-    }
+    },
+
+    /* ✅ Faster incremental builds */
+    "incremental": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
