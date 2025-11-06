@@ -1,94 +1,68 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
-import { supabase } from "@/lib/supabaseClient";
+import { createSupabaseServerClient } from "@/lib/supabaseClient";
+import OpenAI from "openai"; // if you use GPT for flashcards
 
+// Optional: Initialize your OpenAI client once per route
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createSupabaseServerClient(); // ✅ secure SSR instance
     const body = await req.json();
-    const { input, userId, topicId } = body;
+    const { input, user_id } = body;
 
-    if (!input || !userId) {
-      return NextResponse.json({ error: "Missing input or userId" }, { status: 400 });
+    if (!input) {
+      return NextResponse.json({ error: "Missing input" }, { status: 400 });
     }
 
-    // 1️⃣  Prompt the AI to generate flashcards from text
-    const systemPrompt = `
-You are a flashcard generator.
-Given academic notes or explanations, create clear Q&A flashcards in JSON format:
+    // ✅ Get current session to verify user identity
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-[
-  { "question": "...", "answer": "..." },
-  ...
-]
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-Keep answers concise but accurate.
-Return only valid JSON — no markdown, code fences, or commentary.
-`.trim();
-
+    // 🧠 (Optional) Generate flashcards via GPT / AI
+    // Example: simple GPT prompt for demonstration
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: input },
+        {
+          role: "system",
+          content: "Generate concise flashcards from study text.",
+        },
+        {
+          role: "user",
+          content: `Create 5 Q&A flashcards based on this input: ${input}`,
+        },
       ],
-      temperature: 0.4,
     });
 
-    const rawText = completion.choices?.[0]?.message?.content?.trim() || "[]";
+    const aiOutput = completion.choices[0].message?.content ?? "";
+    const flashcards = JSON.parse(aiOutput || "[]");
 
-    // 2️⃣  Safely parse JSON
-    let flashcards: { question: string; answer: string }[] = [];
-    try {
-      flashcards = JSON.parse(rawText);
-      if (!Array.isArray(flashcards)) flashcards = [];
-    } catch {
-      flashcards = [];
-    }
-
-    // 3️⃣  Create flashcard set
-    const { data: setData, error: setError } = await supabase
-      .from("flashcard_sets")
+    // 🗃️ Save generated set into your Supabase DB
+    const { data: insertedSet, error: insertError } = await supabase
+      .from("flashcards")
       .insert({
-        user_id: userId,
-        topic_id: topicId ?? null,
-        topic: topicId ? null : "Untitled Set",
-        raw_text: input,
-        verified: false,
-        source: "user",
+        user_id: user_id || user.id,
+        title: input.slice(0, 60),
+        cards: flashcards,
       })
-      .select()
+      .select("id")
       .single();
 
-    if (setError) {
-      console.error("❌ Error creating flashcard set:", setError);
-      return NextResponse.json({ error: "Failed to create flashcard set" }, { status: 500 });
-    }
+    if (insertError) throw insertError;
 
-    const setId = setData.id as string;
-
-    // 4️⃣  Insert generated flashcards
-    if (flashcards.length > 0) {
-      const rows = flashcards.map((f) => ({
-        set_id: setId,
-        question: f.question ?? "",
-        answer: f.answer ?? "",
-      }));
-
-      const { error: cardsError } = await supabase.from("flashcards").insert(rows);
-
-      if (cardsError) {
-        console.error("❌ Error inserting flashcards:", cardsError);
-      }
-    }
-
-    // 5️⃣  Return response
-    return NextResponse.json({ setId, flashcards, topicId }, { status: 200 });
-  } catch (err) {
-    console.error("❌ Unexpected error:", err);
-    return NextResponse.json({ error: "Server error", details: `${err}` }, { status: 500 });
+    // ✅ Return the created set ID to the client
+    return NextResponse.json({ set_id: insertedSet.id });
+  } catch (err: any) {
+    console.error("[API /generate] error:", err.message);
+    return NextResponse.json({ error: err.message || "Unexpected error" }, { status: 500 });
   }
 }
