@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    /* ✅ Base setup for Next.js app */
     "typeRoots": ["src/types", "node_modules/@types"],
     "jsx": "preserve",
     "moduleResolution": "node",
@@ -11,14 +10,13 @@
     "strict": true,
     "isolatedModules": true,
     "noEmit": true,
+    "types": ["node"],
 
-    /* ✅ Path alias (so @/lib/... and @/components/... work) */
     "baseUrl": "src",
     "paths": {
       "@/*": ["*"]
     },
 
-    /* ✅ Faster incremental builds */
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true

@@ -24,7 +24,7 @@ interface FlashcardSet {
   created_at: string;
   verified: boolean;
   source: string;
-  curriculum_info: CurriculumInfo[]; // Supabase returns arrays for joins
+  curriculum_info: CurriculumInfo[];
   progress: ProgressInfo[];
 }
 
@@ -67,11 +67,8 @@ export default function DashboardPage() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("❌ Supabase error:", error);
-      } else {
-        setSets(data || []);
-      }
+      if (error) console.error("❌ Supabase error:", error);
+      else setSets(data || []);
 
       setLoading(false);
     };
@@ -80,10 +77,17 @@ export default function DashboardPage() {
   }, [user]);
 
   if (loading) return <p className="p-6">Loading dashboard...</p>;
+
   if (!sets.length)
     return (
       <div className="p-6 text-center space-y-4">
         <h1 className="text-2xl font-bold">My Flashcard Sets</h1>
+
+        {/* ✅ Tailwind color test */}
+        <div className="bg-primary text-white p-4 rounded-lg mt-4 shadow inline-block">
+          Tailwind colors working 🎨
+        </div>
+
         <p>You haven’t created any decks yet.</p>
         <button
           onClick={() => router.push("/dashboard/generate")}
@@ -97,9 +101,8 @@ export default function DashboardPage() {
   // Group decks by curriculum info
   const grouped: Record<string, FlashcardSet[]> = {};
   for (const set of sets) {
-    const info = set.curriculum_info?.[0]; // safe access
+    const info = set.curriculum_info?.[0];
     const key = info ? `${info.country} – ${info.education_level} – ${info.subject}` : "User Decks";
-
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(set);
   }
@@ -114,6 +117,11 @@ export default function DashboardPage() {
         >
           + New Deck
         </button>
+      </div>
+
+      {/* ✅ Tailwind test (blue box) */}
+      <div className="bg-primary text-white p-4 rounded-lg mt-2 shadow">
+        Tailwind theme confirmed 🎨
       </div>
 
       {Object.entries(grouped).map(([group, decks]) => (
