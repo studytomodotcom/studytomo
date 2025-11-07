@@ -1,35 +1,33 @@
 "use client";
-
-import { cva, VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { ButtonHTMLAttributes } from "react";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-xl font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none",
-  {
-    variants: {
-      variant: {
-        primary: "bg-primary text-white hover:bg-blue-600 focus:ring-blue-400",
-        secondary: "bg-secondary text-white hover:bg-emerald-600 focus:ring-emerald-400",
-        outline: "border border-gray-300 text-gray-800 hover:bg-gray-100 focus:ring-gray-300",
-      },
-      size: {
-        sm: "px-3 py-1.5 text-sm",
-        md: "px-4 py-2 text-base",
-        lg: "px-5 py-3 text-lg",
-      },
-    },
-    defaultVariants: {
-      variant: "primary",
-      size: "md",
-    },
-  }
-);
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "secondary" | "outline";
+  loading?: boolean;
+}
 
-export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
-
-export function Button({ className, variant, size, ...props }: ButtonProps) {
-  return <button className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+export function Button({
+  children,
+  className,
+  variant = "primary",
+  loading,
+  ...props
+}: ButtonProps) {
+  const base =
+    "inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium transition-all focus:outline-none";
+  const variants = {
+    primary: "bg-blue-600 text-white hover:bg-blue-700",
+    secondary: "bg-green-600 text-white hover:bg-green-700",
+    outline: "border border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+  };
+  return (
+    <button
+      disabled={loading || props.disabled}
+      className={cn(base, variants[variant], loading && "opacity-60 cursor-not-allowed", className)}
+      {...props}
+    >
+      {loading ? "Loading..." : children}
+    </button>
+  );
 }

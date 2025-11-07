@@ -1,16 +1,13 @@
-import { cn } from "@/lib/utils";
-
 interface ProgressBarProps {
-  value: number; // 0–100
-  className?: string;
+  value: number;
 }
 
-export function ProgressBar({ value, className }: ProgressBarProps) {
+export function ProgressBar({ value }: ProgressBarProps) {
   return (
-    <div className={cn("w-full h-3 bg-gray-200 rounded-full overflow-hidden", className)}>
+    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
       <div
-        className="h-full bg-linear-to-r from-primary to-secondary rounded-full transition-all"
-        style={{ width: `${value}%` }}
+        className="h-full bg-blue-500 rounded-full transition-all duration-500"
+        style={{ width: `${Math.min(value, 100)}%` }}
       />
     </div>
   );

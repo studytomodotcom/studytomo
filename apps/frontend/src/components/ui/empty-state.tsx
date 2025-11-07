@@ -1,4 +1,3 @@
-import { TomoMascot } from "../tomo/TomoMascot";
 import { Button } from "./button";
 
 interface EmptyStateProps {
@@ -10,12 +9,11 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, description, actionLabel, onAction }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center text-center p-10 text-gray-700">
-      <TomoMascot size={120} mood="thinking" />
-      <h2 className="mt-6 text-xl font-semibold">{title}</h2>
-      <p className="mt-2 text-gray-500 max-w-md">{description}</p>
-      {actionLabel && onAction && (
-        <Button className="mt-4" onClick={onAction}>
+    <div className="flex flex-col items-center justify-center text-center py-16 px-6">
+      <h2 className="text-lg font-semibold text-gray-800 mb-2">{title}</h2>
+      <p className="text-gray-500 mb-4 max-w-sm">{description}</p>
+      {actionLabel && (
+        <Button onClick={onAction} variant="primary">
           {actionLabel}
         </Button>
       )}
