@@ -1,108 +1,81 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@supabase/auth-helpers-react";
 import { supabase } from "@/lib/supabaseClient";
+import { TomoMascot, TomoSay } from "@/components/tomo";
 
 export default function GeneratePage() {
   const user = useUser();
   const router = useRouter();
-
   const [input, setInput] = useState("");
-  const [topics, setTopics] = useState<any[]>([]);
-  const [selectedTopic, setSelectedTopic] = useState("");
   const [loading, setLoading] = useState(false);
-  const [debug, setDebug] = useState<any>(null);
-
-  useEffect(() => {
-    const loadTopics = async () => {
-      const { data, error } = await supabase
-        .from("curriculum_topics")
-        .select("id, country, education_level, subject, topic, subtopic")
-        .order("country", { ascending: true });
-      if (!error && data) setTopics(data);
-    };
-    loadTopics();
-  }, []);
+  const [status, setStatus] = useState<string | null>(null);
 
   const handleGenerate = async () => {
-    if (!input.trim()) return alert("Please enter some text.");
-    if (!user) return alert("You must be logged in.");
+    if (!user) {
+      alert("Please log in first.");
+      router.push("/auth/login");
+      return;
+    }
+    if (!input.trim()) {
+      alert("Please paste a YouTube link or text.");
+      return;
+    }
 
     setLoading(true);
+    setStatus("🧠 Generating flashcards…");
+
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          input,
-          userId: user.id,
-          topicId: selectedTopic || null,
-        }),
+        body: JSON.stringify({ user_id: user.id, input }),
       });
-      const result = await res.json();
-      setDebug(result);
 
-      if (res.ok) {
-        alert("✅ Flashcards generated!");
-        router.push(`/flashcards/${result.setId}`);
-      } else {
-        alert(`❌ ${result.error || "Failed to generate"}`);
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Server error");
+      if (!res.ok) throw new Error("Server error");
+      const { set_id } = await res.json();
+
+      setStatus("✅ Flashcards created successfully!");
+      setTimeout(() => router.push(`/flashcards/${set_id}`), 1000);
+    } catch (err: any) {
+      console.error(err);
+      setStatus("❌ Something went wrong. Try again later.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">AI Flashcard Generator</h1>
-      <textarea
-        className="w-full border p-3 rounded min-h-[150px]"
-        placeholder="Paste your notes, textbook section, or content here..."
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gray-50">
+      <div className="max-w-lg w-full bg-white p-8 rounded-xl shadow space-y-6">
+        <div className="flex flex-col items-center gap-3">
+          <TomoMascot mood="thinking" size={90} />
+          <TomoSay message="Paste a YouTube link or text, and I’ll make flashcards for you!" />
+        </div>
 
-      <div>
-        <label className="block mb-1 font-medium text-gray-700">
-          Link to Curriculum Topic (optional)
-        </label>
-        <select
-          className="w-full border p-2 rounded"
-          value={selectedTopic}
-          onChange={(e) => setSelectedTopic(e.target.value)}
+        <textarea
+          placeholder="Paste YouTube link or text here..."
+          className="w-full h-40 p-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none text-gray-700"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+
+        <button
+          disabled={loading}
+          onClick={handleGenerate}
+          className={`w-full py-2 rounded-md text-white font-medium transition ${
+            loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          <option value="">— None —</option>
-          {topics.map((t) => (
-            <option key={t.id} value={t.id}>
-              {`${t.country} / ${t.education_level} / ${t.subject} / ${t.topic}${
-                t.subtopic ? ` / ${t.subtopic}` : ""
-              }`}
-            </option>
-          ))}
-        </select>
+          {loading ? "Generating..." : "Generate Flashcards"}
+        </button>
+
+        {status && (
+          <p className="text-sm text-center mt-3 text-gray-600 whitespace-pre-wrap">{status}</p>
+        )}
       </div>
-
-      <button
-        onClick={handleGenerate}
-        disabled={loading}
-        className={`w-full py-3 rounded text-white font-semibold ${
-          loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-        }`}
-      >
-        {loading ? "Generating..." : "Generate Flashcards"}
-      </button>
-
-      {debug && (
-        <pre className="bg-gray-100 text-xs p-3 rounded overflow-x-auto">
-          {JSON.stringify(debug, null, 2)}
-        </pre>
-      )}
     </div>
   );
 }
