@@ -5,7 +5,9 @@ import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { createPagesBrowserClient } from "@supabase/auth-helpers-nextjs";
 
 export default function SupabaseProvider({ children }: { children: React.ReactNode }) {
+  // Initialize Supabase browser client once
   const [supabaseClient] = useState(() => createPagesBrowserClient());
+
   return (
     <SessionContextProvider supabaseClient={supabaseClient}>{children}</SessionContextProvider>
   );

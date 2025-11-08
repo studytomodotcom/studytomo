@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabaseClient";
+import { createSupabaseServerClient } from "@/lib/supabaseServerClient";
 import OpenAI from "openai"; // if you use GPT for flashcards
 
 // Optional: Initialize your OpenAI client once per route

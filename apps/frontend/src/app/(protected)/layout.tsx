@@ -1,8 +1,17 @@
-export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-gray-100">
-      {/* navbar, sidebar, etc. */}
-      <main className="max-w-6xl mx-auto p-6">{children}</main>
-    </div>
-  );
+// apps/frontend/src/app/(protected)/layout.tsx
+import React from "react";
+import { createSupabaseServerClient } from "@/lib/supabaseServerClient";
+import { redirect } from "next/navigation";
+
+export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  return <>{children}</>;
 }

@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
@@ -10,34 +9,54 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get: (key) => request.cookies.get(key)?.value,
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookies) {
+          cookies.forEach(({ name, value, options }) => {
+            // 🔧 Override defaults to keep tokens in localhost & dev
+            response.cookies.set(name, value, {
+              ...options,
+              path: "/",
+              sameSite: "none",
+              secure: false, // ✅ must be false for localhost (no HTTPS)
+              httpOnly: false, // ✅ allow JS access to Supabase auth client
+            });
+          });
+        },
       },
     }
   );
 
-  const { data } = await supabase.auth.getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
 
   const isAuthPage =
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/signup") ||
-    request.nextUrl.pathname.startsWith("/forgot-password") ||
-    request.nextUrl.pathname.startsWith("/reset-password");
+    pathname.startsWith("/auth/login") ||
+    pathname.startsWith("/auth/signup") ||
+    pathname.startsWith("/auth/forgot-password") ||
+    pathname.startsWith("/auth/reset-password");
 
-  if (!data.session && !isAuthPage) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    return NextResponse.redirect(redirectUrl);
+  const isProtected =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/flashcards") ||
+    pathname.startsWith("/generate") ||
+    pathname.startsWith("/progress");
+
+  if (isAuthPage && user) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (data.session && isAuthPage) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
-    return NextResponse.redirect(redirectUrl);
+  if (isProtected && !user) {
+    return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/signup", "/forgot-password", "/reset-password"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

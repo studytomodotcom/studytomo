@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@supabase/auth-helpers-react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseBrowserClient";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 

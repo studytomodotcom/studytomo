@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useUser } from "@supabase/auth-helpers-react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseBrowserClient";
 import confetti from "canvas-confetti";
 
 interface Flashcard {
@@ -122,7 +122,7 @@ export default function FlashcardViewer() {
     const tomoMood = accuracy >= 0.8 ? "/mascot/tomo-happy.png" : "/mascot/tomo-sleepy.png";
 
     return (
-      <div className="p-6 text-center min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-green-50">
+      <div className="p-6 text-center min-h-screen flex flex-col items-center justify-center bg-linear-to-b from-blue-50 to-green-50">
         {/* 🐱 Tomo the Cat */}
         <div className="relative mb-6">
           <img

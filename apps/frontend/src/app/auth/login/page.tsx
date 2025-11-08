@@ -1,90 +1,81 @@
 "use client";
 
-import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useRedirectIfAuthenticated } from "@/lib/hooks/useRedirectIfAuthenticated";
+import { supabase } from "@/lib/supabaseBrowserClient";
 
 export default function LoginPage() {
-  const supabase = createClientComponentClient();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // 🚫 Redirect if already logged in
-  useRedirectIfAuthenticated("/dashboard");
+  // ✅ If already logged in, redirect immediately
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.replace("/dashboard");
+      }
+    })();
+
+    // Also listen for auth state changes
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) router.replace("/dashboard");
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage(null);
-
-    if (!email || !password) {
-      setMessage("Please enter both email and password.");
-      return;
-    }
-
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      router.push("/dashboard");
-    } catch (err: any) {
-      setMessage(`❌ ${err.message}`);
-    } finally {
-      setLoading(false);
+    setError(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      console.log("✅ Login successful, redirecting...");
+      router.replace("/dashboard");
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-6">
-      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-4 text-center">Welcome Back</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen px-4">
+      <h1 className="text-2xl font-semibold mb-4">Log in to StudyTomo</h1>
+      <form onSubmit={handleLogin} className="flex flex-col w-full max-w-sm gap-3">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border px-3 py-2 rounded-md"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border px-3 py-2 rounded-md"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-2 rounded-md text-white font-medium transition ${
-              loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {loading ? "Signing in..." : "Login"}
-          </button>
-        </form>
-
-        {message && (
-          <p className="text-sm text-center mt-4 text-gray-600 whitespace-pre-line">{message}</p>
-        )}
-
-        <div className="text-sm text-center mt-6 text-gray-500 space-y-1">
-          <a href="/auth/forgot-password" className="text-blue-600 hover:underline block">
-            Forgot password?
-          </a>
-          <p>
-            Don’t have an account?{" "}
-            <a href="/auth/signup" className="text-blue-600 hover:underline">
-              Sign up
-            </a>
-          </p>
-        </div>
-      </div>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+      </form>
     </div>
   );
 }
